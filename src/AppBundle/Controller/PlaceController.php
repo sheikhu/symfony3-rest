@@ -2,6 +2,8 @@
 
 namespace AppBundle\Controller;
 
+use FOS\RestBundle\Controller\Annotations\Get;
+use FOS\RestBundle\View\View;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
@@ -9,13 +11,15 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use AppBundle\Entity\Place;
 use Symfony\Component\HttpFoundation\Response as HttpStatus;
+use Symfony\Component\VarDumper\VarDumper;
+use FOS\RestBundle\Controller\Annotations as Rest;
 
 class PlaceController extends ApiController
 {
 
     /**
-     * @Route("/places", name="places_list")
-     * @Method({"GET"})
+     * @Rest\View()
+     * @Get("places")
      */
     public function getPlacesAction(Request $request)
     {
@@ -24,12 +28,12 @@ class PlaceController extends ApiController
                 ->getRepository(Place::class)
                 ->findAll();
 
-        return $this->json($places);
+        return $places;
     }
 
     /**
-     * @Route("/places/{id}", name="places_one", requirements={"place_id" = "\d+"})
-     * @Method({"GET"})
+     * @Rest\View()
+     * @Get("places/{id}")
      */
     public function getPlaceAction(Request $request, $id)
     {
@@ -41,6 +45,6 @@ class PlaceController extends ApiController
             return $this->respondNotFound("Place <$id> not found");
 
 
-        return $this->respond($place);
+        return $place;
     }
 }
