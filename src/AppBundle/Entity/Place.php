@@ -3,12 +3,14 @@
 namespace AppBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 /**
  * Place
  *
  * @ORM\Table(name="places")
  * @ORM\Entity(repositoryClass="AppBundle\Repository\PlaceRepository")
+ * @UniqueEntity("name")
  */
 class Place implements \JsonSerializable
 {
@@ -23,14 +25,14 @@ class Place implements \JsonSerializable
 
     /**
      * @var string
-     *
+     * @Assert\NotNull()
      * @ORM\Column(name="name", type="string", length=255)
      */
     private $name;
 
     /**
      * @var string
-     *
+     * @Assert\NotNull()
      * @ORM\Column(name="address", type="string", length=255)
      */
     private $address;

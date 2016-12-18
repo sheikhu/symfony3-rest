@@ -3,13 +3,17 @@
 namespace AppBundle\Controller;
 
 use AppBundle\Entity\Place;
+use AppBundle\Form\PlaceType;
 use Doctrine\Common\Collections\ArrayCollection;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Controller\Annotations\Get;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\VarDumper\VarDumper;
 
 class PlaceController extends ApiController
 {
@@ -21,12 +25,9 @@ class PlaceController extends ApiController
      */
     public function getPlacesAction()
     {
+        $placeService = $this->get('place_service');
 
-        $places = $this->getDoctrine()->getManager()
-                ->getRepository(Place::class)
-                ->findAll();
-
-        return $places;
+        return $placeService->fetchPlaces();
     }
 
     /**
@@ -37,9 +38,9 @@ class PlaceController extends ApiController
      */
     public function getPlaceAction($id)
     {
-        $place = $this->getDoctrine()->getManager()
-            ->getRepository(Place::class)
-            ->find($id);
+        $placeService = $this->get('place_service');
+
+        $place = $placeService->getPlace($id);
 
         if($place == null)
             return $this->respondNotFound("Place <$id> not found");
@@ -51,34 +52,63 @@ class PlaceController extends ApiController
     /**
      * @Rest\View()
      * @Rest\Post("/places")
-     * @param PlaceDTO $placeDTO
-     * @param ConstraintViolationListInterface $validationErrors
+     * @param Request $request
+     * @param PlaceDTO $placeDto
      * @return PlaceDTO|ArrayCollection
+     * @internal param CreatePlaceRequest $placeRequest
+     * @internal param ConstraintViolationListInterface $validationErrors
+     * @internal param PlaceDTO $placeDTO
      */
-    public function createPlacesAction(PlaceDTO $placeDTO, ConstraintViolationListInterface $validationErrors)
+    public function createPlacesAction(Request $request, PlaceDTO $placeDto)
     {
-        if(count($validationErrors) > 0) {
-            $errors = new ArrayCollection();
 
-            /** @var ConstraintViolation $error */
-            foreach ($validationErrors as $error) {
-                //VarDumper::dump($error)
-                $errors->add([
-                    'message'   =>  $error->getMessage(),
-                    'propertyPath'  =>  $error->getPropertyPath()
-                ]);
-            }
+        $place = new Place();
+        $placeForm = $this->createForm(PlaceType::class, $place);
 
-            return $errors;
+        $placeForm->submit($request->request->all());
+
+        if(!$placeForm->isValid()) {
+            return $this->setStatusCode(Response::HTTP_BAD_REQUEST)
+                ->respond($placeForm);
         }
 
-        return $placeDTO;
+        $placeService = $this->get('place_service');
+        $place = $placeService->createPlace($place);
+
+        return $place;
     }
 
 
 
 }
 
+class CreatePlaceRequest {
+
+    /**
+     * @var PlaceDTO
+     * @Assert\Valid()
+     * @Assert\NotNull()
+     */
+    protected $place;
+
+    /**
+     * @return mixed
+     */
+    public function getPlace()
+    {
+        return $this->place;
+    }
+
+    /**
+     * @param mixed $place
+     */
+    public function setPlace($place)
+    {
+        $this->place = $place;
+    }
+
+
+}
 class PlaceDTO {
     /**
      * @Assert\NotBlank()
